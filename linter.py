@@ -18,7 +18,7 @@ class Flow(Linter):
     """Provides an interface to flow."""
 
     syntax = ('javascript', 'html')
-    cmd = 'flow --from'
+    cmd = 'flow --from vim'
     version_args = '--version'
     version_re = r'(?P<version>\d+\.\d+\.\d+)'
     version_requirement = '>= 0.1.0'
@@ -39,7 +39,8 @@ class Flow(Linter):
         ^(?P<message3>.+)\s*$
     '''
     multiline = True
-    tempfile_suffix = 'js'
+    word_re = r'^"?([^"]+)"?(?=[\s\,\)])'
+    tempfile_suffix = '-'
     selectors = {
         'html': 'source.js.embedded.html'
     }
