@@ -18,25 +18,19 @@ class Flow(Linter):
     """Provides an interface to flow."""
 
     syntax = ('javascript', 'html')
-    cmd = 'flow --from vim'
+    cmd = 'flow check'
     version_args = '--version'
     version_re = r'(?P<version>\d+\.\d+\.\d+)'
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
         # Find the line number and col
-        ^File .*,[\D]+(?P<line>\d+),[\D]+(?P<col>\d+)\-\d+:$\r?\n
-
-        # The first part of the message
-        ^(?P<message1>.+)$\r?\n
+        ^.*(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message1>.+)$\r?\n
 
         # The second part of the message
         ^(?P<message2>.+)$\r?\n
 
-        # The file where the type is defined
-        ^.+$\r?\n
-
         # The third part of the message
-        ^(?P<message3>.+)\s*$
+        ^\s*.*:\d+:\d+,\d+:\s*(?P<message3>.+)\s*$
     '''
     multiline = True
     word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
