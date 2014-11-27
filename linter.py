@@ -19,7 +19,7 @@ class Flow(Linter):
     """Provides an interface to flow."""
 
     syntax = ('javascript', 'html')
-    cmd = 'flow check'
+    executable = 'flow'
     version_args = '--version'
     version_re = r'(?P<version>\d+\.\d+\.\d+)'
     version_requirement = '>= 0.1.0'
@@ -34,11 +34,33 @@ class Flow(Linter):
         ^\s*.*:\d+:\d+,\d+:\s*(?P<message3>.+)\s*$
     '''
     multiline = True
+    defaults = {
+        # Allows the user to lint *all* files, regardless of whether they have the `/* @flow */` declaration at the top.
+        'all': False,
+
+        # Allow to bypass the 50 errors cap
+        'show-all-errors': True,
+
+        # Options for flow
+        '--lib:,': ''
+    }
     word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
     tempfile_suffix = '-'
     selectors = {
         'html': 'source.js.embedded.html'
     }
+
+    def cmd(self):
+        """Return the command line to execute."""
+        command = [self.executable_path, 'check']
+
+        if self.get_merged_settings()['show-all-errors']:
+            command.append('--show-all-errors')
+
+        if self.get_merged_settings()['all']:
+            command.append('--all')
+
+        return command
 
     def split_match(self, match):
         """
