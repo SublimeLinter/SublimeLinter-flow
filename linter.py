@@ -10,6 +10,7 @@
 
 """This module exports the Flow plugin class."""
 
+import os
 from SublimeLinter.lint import Linter
 
 
@@ -24,7 +25,7 @@ class Flow(Linter):
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
         # Find the line number and col
-        ^.*(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message1>.+)$\r?\n
+        ^/.+/(?P<file_name>.+):(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message1>.+)$\r?\n
 
         # The second part of the message
         ^(?P<message2>.+)$\r?\n
@@ -48,16 +49,20 @@ class Flow(Linter):
         """
 
         if match:
-            message = '"{0}"" {1} {2}'.format(
-                match.group('message1'),
-                match.group('message2'),
-                match.group('message3')
-            )
+            open_file_name = os.path.basename(self.view.file_name())
+            linted_file_name = match.group('file_name')
 
-            line = max(int(match.group('line')) - 1, 0)
-            col = int(match.group('col')) - 1
+            if linted_file_name == open_file_name:
+                message = '"{0}"" {1} {2}'.format(
+                    match.group('message1'),
+                    match.group('message2'),
+                    match.group('message3')
+                )
 
-            # match, line, col, error, warning, message, near
-            return match, line, col, True, False, message, None
+                line = max(int(match.group('line')) - 1, 0)
+                col = int(match.group('col')) - 1
+
+                # match, line, col, error, warning, message, near
+                return match, line, col, True, False, message, None
 
         return match, None, None, None, None, '', None
