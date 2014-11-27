@@ -24,14 +24,14 @@ class Flow(Linter):
     version_re = r'(?P<version>\d+\.\d+\.\d+)'
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
-        # Find the line number and col
-        ^/.+/(?P<file_name>.+):(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message1>.+)$\r?\n
+        # Warning location and optional title for the message
+        /.+/(?P<file_name>.+):(?P<line>\d+):(?P<col>\d+),\d+:\s?(?P<message_title>.*)\r?\n
 
-        # The second part of the message
-        ^(?P<message2>.+)$\r?\n
+        # Main lint message
+        (?P<message>.+)
 
-        # The third part of the message
-        ^\s*.*:\d+:\d+,\d+:\s*(?P<message3>.+)\s*$
+        # Optional message, only extract the text, leave the path
+        (\r?\n\s\s/.+:\s(?P<message_footer>.+))?
     '''
     multiline = True
     defaults = {
@@ -76,11 +76,16 @@ class Flow(Linter):
             linted_file_name = match.group('file_name')
 
             if linted_file_name == open_file_name:
-                message = '"{0}"" {1} {2}'.format(
-                    match.group('message1'),
-                    match.group('message2'),
-                    match.group('message3')
-                )
+                message_title = match.group('message_title')
+                message = match.group('message')
+                message_footer = match.group('message_footer') or ""
+
+                if message_title:
+                    message = '"{0}"" {1} {2}'.format(
+                        message_title,
+                        message,
+                        message_footer
+                    )
 
                 line = max(int(match.group('line')) - 1, 0)
                 col = int(match.group('col')) - 1
