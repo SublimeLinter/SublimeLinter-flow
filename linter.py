@@ -45,7 +45,6 @@ class Flow(Linter):
         '--lib:,': ''
     }
     word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
-    tempfile_suffix = '-'
     selectors = {
         'html': 'source.js.embedded.html'
     }
