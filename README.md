@@ -13,7 +13,7 @@ Before using this plugin, you must ensure that `flow` is installed on your syste
 
 [Getting started with Flow](http://flowtype.org/docs/getting-started.html#installing-flow)
 
-In order for this linter to work you will need to run the `flow init` command in your project unless add `--all` to the arguments.
+In order for this linter to work you will need to run the `flow init` command in your project or manually create a `.flowconfig` file.
 
 **Note:** This plugin requires `flow` 0.1.0 or later.
 
