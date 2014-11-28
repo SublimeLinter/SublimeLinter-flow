@@ -25,10 +25,10 @@ class Flow(Linter):
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
         # Warning location and optional title for the message
-        /.+/(?P<file_name>.+):(?P<line>\d+):(?P<col>\d+),\d+:\s?(?P<message_title>.*)\r?\n
+        ^.+/(?P<file_name>[^/]+\.(js|html)):(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message_title>.+)$\r?\n
 
         # Main lint message
-        (?P<message>.+)
+        ^(?P<message>.+)$
 
         # Optional message, only extract the text, leave the path
         (\r?\n\s\s/.+:\s(?P<message_footer>.+))?
