@@ -49,7 +49,6 @@ class Flow(Linter):
     selectors = {
         'html': 'source.js.embedded.html'
     }
-    config_file = ('.flowconfig')
 
     def cmd(self):
         """Return the command line to execute."""
