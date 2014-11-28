@@ -79,7 +79,7 @@ class Flow(Linter):
                 message = match.group('message')
                 message_footer = match.group('message_footer') or ""
 
-                if message_title:
+                if message_title and message_title.strip():
                     message = '"{0}"" {1} {2}'.format(
                         message_title,
                         message,
