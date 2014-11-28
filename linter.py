@@ -24,7 +24,7 @@ class Flow(Linter):
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
         # Find the line number and col
-        ^.*(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message1>.+)$\r?\n
+        ^.*:(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message1>.+)$\r?\n
 
         # The second part of the message
         ^(?P<message2>.+)$\r?\n
@@ -34,7 +34,6 @@ class Flow(Linter):
     '''
     multiline = True
     word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
-    tempfile_suffix = '-'
     selectors = {
         'html': 'source.js.embedded.html'
     }
