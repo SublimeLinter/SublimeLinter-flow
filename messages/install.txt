@@ -1,4 +1,4 @@
-SublimeLinter-contrib-flow
+SublimeLinter-flow
 -------------------------------
 This linter plugin for SublimeLinter provides an interface to flow.
 
