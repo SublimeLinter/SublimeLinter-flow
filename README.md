@@ -20,7 +20,7 @@ In order for this linter to work you will need to run the `flow init` command in
 ### Linter configuration
 In order for `flow` to be executed by SublimeLinter, you must ensure that its path is available to SublimeLinter. Before going any further, please read and follow the steps in [“Finding a linter executable”](http://sublimelinter.readthedocs.org/en/latest/troubleshooting.html#finding-a-linter-executable) through “Validating your PATH” in the documentation.
 
-Once you have installed and configured `flow`, you can proceed to install the SublimeLinter-contrib-flow plugin if it is not yet installed.
+Once you have installed and configured `flow`, you can proceed to install the SublimeLinter-flow plugin if it is not yet installed.
 
 
 
@@ -31,7 +31,7 @@ To install via Package Control, do the following:
 
 1. Within Sublime Text, bring up the [Command Palette][cmd] and type `install`. Among the commands you should see `Package Control: Install Package`. If that command is not highlighted, use the keyboard or mouse to select it. There will be a pause of a few seconds while Package Control fetches the list of available plugins.
 
-1. When the plugin list appears, type `flow`. Among the entries you should see `SublimeLinter-contrib-flow`. If that entry is not highlighted, use the keyboard or mouse to select it.
+1. When the plugin list appears, type `flow`. Among the entries you should see `SublimeLinter-flow`. If that entry is not highlighted, use the keyboard or mouse to select it.
 
 ## Settings
 For general information on how SublimeLinter works with settings, please see [Settings][settings]. For information on generic linter settings, please see [Linter Settings][linter-settings].
