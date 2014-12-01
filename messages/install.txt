@@ -7,4 +7,4 @@ This linter plugin for SublimeLinter provides an interface to flow.
 Before this plugin will activate, you *must*
 follow the installation instructions here:
 
-https://github.com/ckaznocha/SublimeLinter-contrib-flow
+https://github.com/SublimeLinter/SublimeLinter-flow
