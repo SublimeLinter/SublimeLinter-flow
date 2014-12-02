@@ -41,6 +41,9 @@ class Flow(Linter):
         # Allow to bypass the 50 errors cap
         'show-all-errors': True,
 
+        # Allows flow to start server (makes things faster on larger projects)
+        'use-server': True,
+
         # Options for flow
         '--lib:,': ''
     }
@@ -51,7 +54,12 @@ class Flow(Linter):
 
     def cmd(self):
         """Return the command line to execute."""
-        command = [self.executable_path, 'status']
+        command = [self.executable_path]
+
+        if self.get_merged_settings()['use-server']:
+            command.append('status')
+        else:
+            command.append('check')
 
         if self.get_merged_settings()['show-all-errors']:
             command.append('--show-all-errors')
