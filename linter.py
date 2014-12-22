@@ -10,9 +10,8 @@
 
 """This module exports the Flow plugin class."""
 
-import os
+import os, re
 from SublimeLinter.lint import Linter
-
 
 class Flow(Linter):
 
@@ -41,8 +40,14 @@ class Flow(Linter):
         # Allow to bypass the 50 errors cap
         'show-all-errors': True,
 
+        # Lints the loaded view buffer instead of the file
+        'lint-view': True,
+
+        # Allows flow to start server (makes things faster on larger projects)
+        'use-server': True,
+
         # Options for flow
-        '--lib:,': ''
+        'lib:,': ''
     }
     word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
     selectors = {
@@ -51,15 +56,45 @@ class Flow(Linter):
 
     def cmd(self):
         """Return the command line to execute."""
-        command = [self.executable_path, 'check']
+
+        command = [self.executable_path]
+
+        # Overrides 'use-server' directive if pressent
+        if not self.get_merged_settings()['use-server']:
+            command.append('check')
+        else:
+            if self.get_merged_settings()['lint-view']:
+                command.append('check-contents')
+            else:
+                command.append('status')
+
+        if self.get_merged_settings()['all']:
+            if 'check' in command or 'status' in command:
+                command.append('--all')
+                
+        # TODO: Not tested but seemed like a good thing to add
+        if self.get_merged_settings()['lib'] and len(self.get_merged_settings()['lib']) > 0:
+            command.append('--lib')
+            command.append(self.get_merged_settings()['lib'])
 
         if self.get_merged_settings()['show-all-errors']:
             command.append('--show-all-errors')
 
-        if self.get_merged_settings()['all']:
-            command.append('--all')
-
         return command
+
+    def run(self, cmd, code):
+        """Run the linting command and return the results."""
+        if self.get_merged_settings()['lint-view']:
+            # check for the @flow declaration. Currently only has to be somewhere in the file.
+            if self.get_merged_settings()['all'] or re.match( r'\s*\/\*\s*\@flow\s*\*\/', code):
+                # Since the linter has no knowlage about files, add the filepath to
+                # function with the default filepath to reflect the default function behaviour
+                result = self.communicate(cmd, code).replace('-:',self.filename + ":")
+                return result
+            else:
+                return ''
+        else:
+            return super().run(cmd,code)
 
     def split_match(self, match):
         """
