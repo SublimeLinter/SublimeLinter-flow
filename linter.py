@@ -10,8 +10,10 @@
 
 """This module exports the Flow plugin class."""
 
-import os, re
+import os
+import re
 from SublimeLinter.lint import Linter
+
 
 class Flow(Linter):
 
@@ -71,7 +73,7 @@ class Flow(Linter):
         if self.get_merged_settings()['all']:
             if 'check' in command or 'status' in command:
                 command.append('--all')
-                
+
         # TODO: Not tested but seemed like a good thing to add
         if self.get_merged_settings()['lib'] and len(self.get_merged_settings()['lib']) > 0:
             command.append('--lib')
@@ -86,15 +88,15 @@ class Flow(Linter):
         """Run the linting command and return the results."""
         if self.get_merged_settings()['lint-view']:
             # check for the @flow declaration. Currently only has to be somewhere in the file.
-            if self.get_merged_settings()['all'] or re.match( r'\s*\/\*\s*\@flow\s*\*\/', code):
+            if self.get_merged_settings()['all'] or re.match(r'\s*\/\*\s*\@flow\s*\*\/', code):
                 # Since the linter has no knowlage about files, add the filepath to
                 # function with the default filepath to reflect the default function behaviour
-                result = self.communicate(cmd, code).replace('-:',self.filename + ":")
+                result = self.communicate(cmd, code).replace('-:', self.filename + ":")
                 return result
             else:
                 return ''
         else:
-            return super().run(cmd,code)
+            return super().run(cmd, code)
 
     def split_match(self, match):
         """
@@ -112,14 +114,14 @@ class Flow(Linter):
                 message_title = match.group('message_title')
                 message = match.group('message')
                 message_footer = match.group('message_footer')
-                message_format = [];
+                message_format = []
 
                 if message_title:
-                    message_format.append('[ {0} ]');
+                    message_format.append('[ {0} ]')
                 if message:
-                    message_format.append('{1}');
+                    message_format.append('{1}')
                 if message_footer:
-                    message_format.append('[ {2} ]');
+                    message_format.append('[ {2} ]')
 
                 message = " ".join(message_format).format(
                     message_title,
@@ -133,7 +135,7 @@ class Flow(Linter):
                 col_start, col_end = (int(part) for part in match.group('col').split(','))
                 col_start -= 1
                 # Get the length of the column section for length of error
-                near = " " * (col_end - col_start);
+                near = " " * (col_end - col_start)
 
                 # match, line, col, error, warning, message, near
                 return match, line, col_start, True, False, message, near
