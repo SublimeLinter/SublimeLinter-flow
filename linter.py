@@ -24,10 +24,10 @@ class Flow(Linter):
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
         # Warning location and optional title for the message
-        ^.+/(?P<file_name>[^/]+\.(js|html)):(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message_title>.+)$\r?\n
+        ^.+/(?P<file_name>[^/]+\.(js|html|php)):(?P<line>\d+):(?P<col>(\d+,\d+)):\s*(?P<message_title>.+)$\r?\n
 
-        # Main lint message
-        ^(?P<message>.+)$
+        # Optional message the main message
+        (^(?P<message>.+)$)?
 
         # Optional message, only extract the text, leave the path
         (\r?\n\s\s/.+:\s(?P<message_footer>.+))?
@@ -107,23 +107,35 @@ class Flow(Linter):
         if match:
             open_file_name = os.path.basename(self.view.file_name())
             linted_file_name = match.group('file_name')
-
             if linted_file_name == open_file_name:
+
                 message_title = match.group('message_title')
                 message = match.group('message')
-                message_footer = match.group('message_footer') or ""
+                message_footer = match.group('message_footer')
+                message_format = [];
 
-                if message_title and message_title.strip():
-                    message = '"{0}"" {1} {2}'.format(
-                        message_title,
-                        message,
-                        message_footer
-                    )
+                if message_title:
+                    message_format.append('[ {0} ]');
+                if message:
+                    message_format.append('{1}');
+                if message_footer:
+                    message_format.append('[ {2} ]');
 
+                message = " ".join(message_format).format(
+                    message_title,
+                    message,
+                    message_footer
+                )
+
+                # Get the current line
                 line = max(int(match.group('line')) - 1, 0)
-                col = int(match.group('col')) - 1
+                # Get the start and ending indexes of the column
+                col_start, col_end = (int(part) for part in match.group('col').split(','))
+                col_start -= 1
+                # Get the length of the column section for length of error
+                near = " " * (col_end - col_start);
 
                 # match, line, col, error, warning, message, near
-                return match, line, col, True, False, message, None
+                return match, line, col_start, True, False, message, near
 
         return match, None, None, None, None, '', None
