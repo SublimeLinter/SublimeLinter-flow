@@ -26,13 +26,13 @@ class Flow(Linter):
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
         # Warning location and optional title for the message
-        ^.+/(?P<file_name>[^/]+\.(js|html|php)):(?P<line>\d+):(?P<col>(\d+,\d+)):\s*(?P<message_title>.+)$\r?\n
+        ^.+\/(?P<file_name_1>.+):(?P<col_1>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_title>.+)?\r?\n
 
-        # Optional message the main message
-        (^(?P<message>.+)$)?
+        # (Optional) main message
+        (^(?P<message>.+))?
 
-        # Optional message, only extract the text, leave the path
-        (\r?\n\s\s/.+:\s(?P<message_footer>.+))?
+        # (Optional) message footer
+        (\r?\n\s\s.+\/(?P<file_name_2>.+):(?P<col_2>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_footer>.+))?
     '''
     multiline = True
     defaults = {
@@ -108,12 +108,16 @@ class Flow(Linter):
 
         if match:
             open_file_name = os.path.basename(self.view.file_name())
-            linted_file_name = match.group('file_name')
+            # Since the filename on the top row might be different than the open file if, for example,
+            # something is imported from another file. Use the filename from the footer is it's available.
+            linted_file_name = match.group('file_name_2') or match.group('file_name_1')
+
             if linted_file_name == open_file_name:
 
                 message_title = match.group('message_title')
                 message = match.group('message')
                 message_footer = match.group('message_footer')
+                col = match.group('col_2') or match.group('col_1')
                 message_format = []
 
                 if message_title:
@@ -129,15 +133,25 @@ class Flow(Linter):
                     message_footer
                 )
 
-                # Get the current line
-                line = max(int(match.group('line')) - 1, 0)
-                # Get the start and ending indexes of the column
-                col_start, col_end = (int(part) for part in match.group('col').split(','))
+                # Get the start and ending indexes of the line and column
+                line_cols = col.replace(':', ',').split(',')
+                line_start = max(int(line_cols[0])-1, 0)
+                col_start = int(line_cols[1])
                 col_start -= 1
-                # Get the length of the column section for length of error
-                near = " " * (col_end - col_start)
+
+                # Multi line error
+                if len(line_cols) == 4:
+                    line_end = max(int(line_cols[2])-1, 0)
+                    col_end = int(line_cols[3])
+                    near = " " * (self.view.text_point(line_end, col_end) - self.view.text_point(line_start, col_start))
+
+                # Single line error
+                else:
+                    col_end = int(line_cols[2])
+                    # Get the length of the column section for length of error
+                    near = " " * (col_end - col_start)
 
                 # match, line, col, error, warning, message, near
-                return match, line, col_start, True, False, message, near
+                return match, line_start, col_start, True, False, message, near
 
         return match, None, None, None, None, '', None
