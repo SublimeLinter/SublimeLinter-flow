@@ -87,12 +87,14 @@ class Flow(Linter):
 
     def run(self, cmd, code):
         """Run the linting command and return the results."""
+
         if self.get_merged_settings()['lint-view']:
             # check for the @flow declaration. Currently only has to be somewhere in the file.
             if self.get_merged_settings()['all'] or re.match(r'\s*\/\*\s*\@flow\s*\*\/', code):
                 # Since the linter has no knowlage about files, add the filepath to
                 # function with the default filepath to reflect the default function behaviour
-                result = self.communicate(cmd, code).replace('-:', self.filename + ":")
+                cmd.append(self.filename)
+                result = self.communicate(cmd, code)
                 return result
             else:
                 return ''
