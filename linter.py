@@ -48,8 +48,9 @@ class Flow(Linter):
         # Allows flow to start server (makes things faster on larger projects)
         'use-server': True,
 
+        # TODO: Remove the parameter if deemed unececerry
         # Options for flow
-        'lib:,': ''
+        # 'lib:,': ''
     }
     word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
     selectors = {
@@ -74,10 +75,10 @@ class Flow(Linter):
             if 'check' in command or 'status' in command:
                 command.append('--all')
 
-        # TODO: Not tested but seemed like a good thing to add
-        if self.get_merged_settings()['lib'] and len(self.get_merged_settings()['lib']) > 0:
-            command.append('--lib')
-            command.append(self.get_merged_settings()['lib'])
+        # TODO: Remove the parameter if deemed unececerry.
+        # if self.get_merged_settings()['lib'] and len(self.get_merged_settings()['lib']) > 0:
+        #    command.append('--lib')
+        #    command.append(self.get_merged_settings()['lib'])
 
         if self.get_merged_settings()['show-all-errors']:
             command.append('--show-all-errors')
