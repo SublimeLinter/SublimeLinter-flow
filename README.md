@@ -41,6 +41,8 @@ For general information on how SublimeLinter works with settings, please see [Se
 |all|If set to true, the liner will use pass --all to `flow check` which will check every javascript file regardless of whether they have the `/* @flow */` declaration at the top. [More info](http://flowtype.org/docs/new-project.html#typechecking-your-files)|
 |lib|Add a path to your interface files. [More info](http://flowtype.org/docs/third-party.html#interface-files)|
 |show-all-errors|It allows flow to output all errors instead of stopping at 50|
+|use-server|If set to true, runs `flow status` instead of `flow check`. The former starts a server (if not started already) to speed it up|
+|lint-view|If set to true, runs `check-contents` instead of any other command. This ignores the `use-server` derective and starts a server, since it's required flow |
 
 ### Warning
 
