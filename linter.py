@@ -51,7 +51,7 @@ class Flow(Linter):
 
     def cmd(self):
         """Return the command line to execute."""
-        command = [self.executable_path, 'check']
+        command = [self.executable_path]
 
         if self.get_merged_settings()['show-all-errors']:
             command.append('--show-all-errors')
