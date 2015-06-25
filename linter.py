@@ -31,7 +31,7 @@ class Flow(Linter):
         ^(?P<message>.+)$
 
         # Optional message, only extract the text, leave the path
-        (\r?\n\s\s/.+:\s(?P<message_footer>.+))?
+        (\r?\n\s?\s?/.+:\s(?P<message_footer>.+)(?=\r?\n$))?
     '''
     multiline = True
     defaults = {
