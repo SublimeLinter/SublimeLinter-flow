@@ -25,7 +25,7 @@ class Flow(Linter):
     version_requirement = '>= 0.1.0'
     regex = r'''(?xi)
         # Warning location and optional title for the message
-        ^.+/(?P<file_name>[^/]+\.(js|html|jsx)):(?P<line>\d+):(?P<col>\d+),\d+:\s*(?P<message_title>.+)$\r?\n
+        ^.+/(?P<file_name>[^/]+\.(js|html|jsx)):(?P<line>\d+):(?P<col>\d+),((?P<another_line>\d+):)?(?P<col_end>\d+):\s*(?P<message_title>.+)$\r?\n
 
         # Main lint message
         ^(?P<message>.+)$
@@ -95,8 +95,11 @@ class Flow(Linter):
 
                 line = max(int(match.group('line')) - 1, 0)
                 col = int(match.group('col')) - 1
+                another_line = int(match.group('another_line') or line)
+                col_end = int(match.group('col_end'))
+                near_length = self.view.text_point(another_line, col_end) - self.view.text_point(line, col)
 
                 # match, line, col, error, warning, message, near
-                return match, line, col, True, False, message, None
+                return match, line, col, True, False, message, " " * near_length
 
         return match, None, None, None, None, '', None
