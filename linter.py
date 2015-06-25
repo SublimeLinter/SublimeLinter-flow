@@ -57,7 +57,7 @@ class Flow(Linter):
         command = [self.executable_path]
 
         if self.get_merged_settings()['use-server']:
-            command.append('status')
+            command.append('--no-auto-start')
         else:
             command.append('check')
 
