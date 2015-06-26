@@ -11,6 +11,7 @@
 """This module exports the Flow plugin class."""
 
 import os
+import sublime
 from SublimeLinter.lint import Linter
 
 
@@ -97,9 +98,11 @@ class Flow(Linter):
                 col = int(match.group('col')) - 1
                 another_line = int(match.group('another_line') or line)
                 col_end = int(match.group('col_end'))
-                near_length = self.view.text_point(another_line, col_end) - self.view.text_point(line, col)
+                near_start_point = self.view.text_point(line, col)
+                near_end_point = self.view.text_point(another_line, col_end)
+                near = self.view.substr(sublime.Region(near_start_point, near_end_point))
 
                 # match, line, col, error, warning, message, near
-                return match, line, col, True, False, message, " " * near_length
+                return match, line, col, True, False, message, near
 
         return match, None, None, None, None, '', None
