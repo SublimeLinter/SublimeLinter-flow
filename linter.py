@@ -18,7 +18,7 @@ class Flow(Linter):
 
     """Provides an interface to flow."""
 
-    syntax = ('javascript', 'html')
+    syntax = ('javascript', 'javascript (babel)', 'html')
     executable = 'flow'
     version_args = '--version'
     version_re = r'(?P<version>\d+\.\d+\.\d+)'
