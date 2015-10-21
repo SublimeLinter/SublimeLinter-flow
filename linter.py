@@ -11,7 +11,7 @@
 """This module exports the Flow plugin class."""
 
 import os
-import sublime
+import re
 from SublimeLinter.lint import Linter
 
 
@@ -19,34 +19,29 @@ class Flow(Linter):
 
     """Provides an interface to flow."""
 
-    syntax = ('javascript', 'html', 'javascriptnext', 'javascript (babel)', 'javascript (jsx)', 'jsx')
+    syntax = ('javascript', 'html', 'javascriptnext', 'javascript (babel)', 'javascript (jsx)', 'jsx-real')
     executable = 'flow'
     version_args = '--version'
     version_re = r'(?P<version>\d+\.\d+\.\d+)'
-    version_requirement = '>= 0.1.0'
+    version_requirement = '>= 0.17.0'
+    tempfile_suffix = '-'  # Flow only works on files on disk
+
     regex = r'''(?xi)
         # Warning location and optional title for the message
-        ^.+/(?P<file_name>[^/]+\.(js|html|jsx)):(?P<line>\d+):(?P<col>\d+),((?P<another_line>\d+):)?(?P<col_end>\d+):\s*(?P<message_title>.+)$\r?\n
-
-        # Main lint message
-        ^(?P<message>.+)$
-
-        # Optional message, only extract the text, leave the path
-        (\r?\n\s?\s?/.+:\s(?P<message_footer>.+)(?=\r?\n$))?
+        ^.+\/(?P<file_name_1>.+):(?P<col_1>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_title>.+)?\r?\n
+        # (Optional) main message
+        (^(?P<message>.+))?
+        # (Optional) message footer
+        (\r?\n\s\s.+\/(?P<file_name_2>.+):(?P<col_2>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_footer>.+))?
     '''
+
     multiline = True
     defaults = {
         # Allows the user to lint *all* files, regardless of whether they have the `/* @flow */` declaration at the top.
         'all': False,
 
         # Allow to bypass the 50 errors cap
-        'show-all-errors': True,
-
-        # Allows flow to start server (makes things faster on larger projects)
-        'use-server': True,
-
-        # Options for flow
-        '--lib:,': ''
+        'show-all-errors': True
     }
     word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
     selectors = {
@@ -54,19 +49,24 @@ class Flow(Linter):
     }
 
     def cmd(self):
-        """Return the command line to execute."""
+        """
+        Return the command to execute.
+
+        By default, with no command selected, the 'status' command executes.
+        This starts the server if it is already not started. Once the server
+        has started, checks are very fast.
+        """
         command = [self.executable_path]
+        merged_settings = self.get_merged_settings()
 
-        if self.get_merged_settings()['use-server']:
-            command.append('--no-auto-start')
-        else:
-            command.append('check')
-
-        if self.get_merged_settings()['show-all-errors']:
+        if merged_settings['show-all-errors']:
             command.append('--show-all-errors')
 
-        if self.get_merged_settings()['all']:
+        if merged_settings['all']:
             command.append('--all')
+
+        # Until we update the regex, will re-use the old output format
+        command.append('--old-output-format')
 
         return command
 
@@ -80,12 +80,18 @@ class Flow(Linter):
 
         if match:
             open_file_name = os.path.basename(self.view.file_name())
-            linted_file_name = match.group('file_name')
+            # Since the filename on the top row might be different than the open file if, for example,
+            # something is imported from another file. Use the filename from the footer is it's available.
+            linted_file_name = match.group('file_name_2') or match.group('file_name_1')
 
             if linted_file_name == open_file_name:
+
+                # In the flow message format, the message ends up getting split into a few
+                # pieces for better readability - we try to reconstruct these.
                 message_title = match.group('message_title')
                 message = match.group('message')
-                message_footer = match.group('message_footer') or ""
+                message_footer = match.group('message_footer')
+                col = match.group('col_2') or match.group('col_1')
 
                 if message_title and message_title.strip():
                     message = '"{0}"" {1} {2}'.format(
@@ -94,15 +100,25 @@ class Flow(Linter):
                         message_footer
                     )
 
-                line = max(int(match.group('line')) - 1, 0)
-                col = int(match.group('col')) - 1
-                another_line = int(match.group('another_line') or line)
-                col_end = int(match.group('col_end'))
-                near_start_point = self.view.text_point(line, col)
-                near_end_point = self.view.text_point(another_line, col_end)
-                near = self.view.substr(sublime.Region(near_start_point, near_end_point))
+                # Get the start and ending indexes of the line and column
+                line_cols = col.replace(':', ',').split(',')
+                line_start = max(int(line_cols[0])-1, 0)
+                col_start = int(line_cols[1])
+                col_start -= 1
+
+                # Multi line error
+                if len(line_cols) == 4:
+                    line_end = max(int(line_cols[2])-1, 0)
+                    col_end = int(line_cols[3])
+                    near = " " * (self.view.text_point(line_end, col_end) - self.view.text_point(line_start, col_start))
+
+                # Single line error
+                else:
+                    col_end = int(line_cols[2])
+                    # Get the length of the column section for length of error
+                    near = " " * (col_end - col_start)
 
                 # match, line, col, error, warning, message, near
-                return match, line, col, True, False, message, near
+                return match, line_start, col_start, True, False, message, near
 
         return match, None, None, None, None, '', None
