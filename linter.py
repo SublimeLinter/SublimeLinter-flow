@@ -16,7 +16,6 @@ from SublimeLinter.lint import Linter
 
 
 class Flow(Linter):
-
     """Provides an interface to flow."""
 
     syntax = ('javascript', 'html', 'javascriptnext', 'javascript (babel)', 'javascript (jsx)', 'jsx-real')
