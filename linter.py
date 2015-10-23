@@ -11,7 +11,6 @@
 """This module exports the Flow plugin class."""
 
 import os
-import re
 from SublimeLinter.lint import Linter
 
 
@@ -101,13 +100,13 @@ class Flow(Linter):
 
                 # Get the start and ending indexes of the line and column
                 line_cols = col.replace(':', ',').split(',')
-                line_start = max(int(line_cols[0])-1, 0)
+                line_start = max(int(line_cols[0]) - 1, 0)
                 col_start = int(line_cols[1])
                 col_start -= 1
 
                 # Multi line error
                 if len(line_cols) == 4:
-                    line_end = max(int(line_cols[2])-1, 0)
+                    line_end = max(int(line_cols[2]) - 1, 0)
                     col_end = int(line_cols[3])
                     near = " " * (self.view.text_point(line_end, col_end) - self.view.text_point(line_start, col_start))
 
