@@ -30,7 +30,9 @@ class Flow(Linter):
         # (Optional) main message
         (^(?P<message>.+))?
         # (Optional) message footer
-        (\r?\n\s\s.+\/(?P<file_name_2>.+):(?P<col_2>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_footer>.+))?
+        \r?\n
+        (^.+\/(?P<file_name_2>.+):(?P<col_2>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_footer>.+))?$
+        \r?\n\r?\n
     '''
 
     multiline = True
@@ -65,6 +67,7 @@ class Flow(Linter):
 
         # Until we update the regex, will re-use the old output format
         command.append('--old-output-format')
+        command.append('--color=never')
 
         return command
 
@@ -80,7 +83,7 @@ class Flow(Linter):
             open_file_name = os.path.basename(self.view.file_name())
             # Since the filename on the top row might be different than the open file if, for example,
             # something is imported from another file. Use the filename from the footer is it's available.
-            linted_file_name = match.group('file_name_2') or match.group('file_name_1')
+            linted_file_name = match.group('file_name_1') or match.group('file_name_2')
 
             if linted_file_name == open_file_name:
 
@@ -89,10 +92,10 @@ class Flow(Linter):
                 message_title = match.group('message_title')
                 message = match.group('message')
                 message_footer = match.group('message_footer')
-                col = match.group('col_2') or match.group('col_1')
+                col = match.group('col_1') or match.group('col_2')
 
                 if message_title and message_title.strip():
-                    message = '"{0}"" {1} {2}'.format(
+                    message = '"{0}" {1} "{2}"'.format(
                         message_title,
                         message,
                         message_footer
