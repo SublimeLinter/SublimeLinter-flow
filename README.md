@@ -15,7 +15,7 @@ Before using this plugin, you must ensure that `flow` is installed on your syste
 
 In order for this linter to work you will need to run the `flow init` command in your project or manually create a `.flowconfig` file.
 
-**Note:** This plugin requires `flow` 0.1.0 or later.
+**Note:** This plugin requires `flow` 0.19.0 or later.
 
 ### Linter configuration
 In order for `flow` to be executed by SublimeLinter, you must ensure that its path is available to SublimeLinter. Before going any further, please read and follow the steps in [“Finding a linter executable”](http://sublimelinter.readthedocs.org/en/latest/troubleshooting.html#finding-a-linter-executable) through “Validating your PATH” in the documentation.

@@ -19,20 +19,35 @@ class Flow(Linter):
 
     syntax = ('javascript', 'html', 'javascriptnext', 'javascript (babel)', 'javascript (jsx)', 'jsx-real')
     executable = 'flow'
-    version_args = '--version'
+    version_args = 'version'
     version_re = r'(?P<version>\d+\.\d+\.\d+)'
     version_requirement = '>= 0.17.0'
     tempfile_suffix = '-'  # Flow only works on files on disk
 
-    regex = r'''(?xi)
-        # Warning location and optional title for the message
-        ^.+\/(?P<file_name_1>.+):(?P<col_1>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_title>.+)?\r?\n
-        # (Optional) main message
-        (^(?P<message>.+))?
-        # (Optional) message footer
-        \r?\n
-        (^.+\/(?P<file_name_2>.+):(?P<col_2>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_footer>.+))?$
-        \r?\n\r?\n
+    regex = r'''(?xim)
+        # Match file path
+        ^(?P<file>.*)\:.*$\r?\n
+        # First error line
+        ^(?P<padding_1>\s*(?P<line_1>[0-9]+)\:\s)(?:.*)$\r?\n
+        ^(?:(?P<offset_1>\s*)(?P<code_1>\^+)\s*)(?P<error_1>.*)$\r?\n
+        # Optional second message - function call
+        (?:
+            ^(?P<padding_2>\s*(?P<line_2>[0-9]+)\:\s)(?:.*)$\r?\n
+            ^(?:(?P<offset_2>\s*)(?P<code_2>\^+)\s*)(?:
+                # Messages can reference code in other files, so we need to account for that
+                (?P<error_small_2>.*)\sSee\:\s(?P<reference_2>.*)|
+                (?P<error_2>.*)
+            )$\r?\n
+        )?
+        # Optional third message - reference to definition
+        (?:
+            ^(?P<padding_3>\s*(?P<line_3>[0-9]+)\:\s)(?:.*)$\r?\n
+            ^(?:(?P<offset_3>\s*)(?P<code_3>\^+)\s*)(?:
+                # Messages can reference code in other files, so we need to account for that
+                (?P<error_small_3>.*)\sSee\:\s(?P<reference_3>.*)|
+                (?P<error_3>.*)
+            )$\r?\n
+        )?
     '''
 
     multiline = True
@@ -65,8 +80,6 @@ class Flow(Linter):
         if merged_settings['all']:
             command.append('--all')
 
-        # Until we update the regex, will re-use the old output format
-        command.append('--old-output-format')
         command.append('--color=never')
 
         return command
@@ -79,45 +92,40 @@ class Flow(Linter):
         error messages.
         """
 
+        def err(group):
+            return match.group('error_small_%d' % group) or match.group('error_%d' % group)
+
+        def ref(group1, group2):
+            return match.group('reference_%d' % group1) or match.group('reference_%d' % group2)
+
+        def msg(error1, error2, reference=None):
+            if reference:
+                return '%s %s, See: %s' % (error1, error2, reference)
+            else:
+                return '%s %s' % (error1, error2)
+
         if match:
             open_file_name = os.path.basename(self.view.file_name())
-            # Since the filename on the top row might be different than the open file if, for example,
-            # something is imported from another file. Use the filename from the footer is it's available.
-            linted_file_name = match.group('file_name_1') or match.group('file_name_2')
+            if match.group('file') == open_file_name:
 
-            if linted_file_name == open_file_name:
-
-                # In the flow message format, the message ends up getting split into a few
-                # pieces for better readability - we try to reconstruct these.
-                message_title = match.group('message_title')
-                message = match.group('message')
-                message_footer = match.group('message_footer')
-                col = match.group('col_1') or match.group('col_2')
-
-                if message_title and message_title.strip():
-                    message = '"{0}" {1} "{2}"'.format(
-                        message_title,
-                        message,
-                        message_footer
-                    )
-
-                # Get the start and ending indexes of the line and column
-                line_cols = col.replace(':', ',').split(',')
-                line_start = max(int(line_cols[0]) - 1, 0)
-                col_start = int(line_cols[1])
-                col_start -= 1
-
-                # Multi line error
-                if len(line_cols) == 4:
-                    line_end = max(int(line_cols[2]) - 1, 0)
-                    col_end = int(line_cols[3])
-                    near = " " * (self.view.text_point(line_end, col_end) - self.view.text_point(line_start, col_start))
-
-                # Single line error
+                # Flow displays errors between 1 and 3 lines depending on the type of error
+                # We reconstruct the error message depending on the number of lines
+                if match.group('line_3'):
+                    message = msg(err(2), err(3), ref(2, 3))
+                    if match.group('reference_3'):
+                        target = 2
+                    else:
+                        target = 3
                 else:
-                    col_end = int(line_cols[2])
-                    # Get the length of the column section for length of error
-                    near = " " * (col_end - col_start)
+                    if match.group('line_2'):
+                        message = msg(match.group('error_1'), err(2), match.group('reference_2'))
+                    else:
+                        message = match.group('error_1')
+                    target = 1
+                line_start = int(match.group('line_%d' % target))
+                col_start = len(match.group('offset_%d' % target)) - len(match.group('padding_%d' % target))
+                near = ' ' * len(match.group('code_%d' % target))
+                line_start = line_start - 1
 
                 # match, line, col, error, warning, message, near
                 return match, line_start, col_start, True, False, message, near
