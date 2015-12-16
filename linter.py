@@ -92,11 +92,11 @@ class Flow(Linter):
         error messages.
         """
 
-        def err(g):
-            return match.group('error_small_%d' % g) or match.group('error_%d' % g)
+        def err(group):
+            return match.group('error_small_%d' % group) or match.group('error_%d' % group)
 
-        def ref(g1, g2):
-            return match.group('reference_%d' % g1) or match.group('reference_%d' % g2)
+        def ref(group1, group2):
+            return match.group('reference_%d' % group1) or match.group('reference_%d' % group2)
 
         def msg(error1, error2, reference=None):
             if reference:
@@ -126,8 +126,6 @@ class Flow(Linter):
                 col_start = len(match.group('offset_%d' % target)) - len(match.group('padding_%d' % target))
                 near = ' ' * len(match.group('code_%d' % target))
                 line_start = line_start - 1
-
-                print(line_start, col_start, near, '|', message)
 
                 # match, line, col, error, warning, message, near
                 return match, line_start, col_start, True, False, message, near
