@@ -37,9 +37,6 @@ class Flow(Linter):
 
     multiline = True
     defaults = {
-        # Allows the user to lint *all* files, regardless of whether they have the `/* @flow */` declaration at the top.
-        'all': False,
-
         # Allow to bypass the 50 errors cap
         'show-all-errors': True
     }
@@ -61,9 +58,6 @@ class Flow(Linter):
 
         if merged_settings['show-all-errors']:
             command.append('--show-all-errors')
-
-        if merged_settings['all']:
-            command.append('--all')
 
         # Until we update the regex, will re-use the old output format
         command.append('--old-output-format')
