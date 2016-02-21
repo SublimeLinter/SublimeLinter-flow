@@ -10,8 +10,9 @@
 
 """This module exports the Flow plugin class."""
 
-import os
-from SublimeLinter.lint import Linter
+import json
+import re
+from SublimeLinter.lint import Linter, persist
 
 
 class Flow(Linter):
@@ -19,31 +20,20 @@ class Flow(Linter):
 
     syntax = ('javascript', 'html', 'javascriptnext', 'javascript (babel)', 'javascript (jsx)', 'jsx-real')
     executable = 'flow'
-    version_args = '--version'
-    version_re = r'(?P<version>\d+\.\d+\.\d+)'
+    version_args = 'version --json'
+    version_re = r'"semver":\s*"(?P<version>\d+\.\d+\.\d+)"'
     version_requirement = '>= 0.17.0'
     tempfile_suffix = '-'  # Flow only works on files on disk
 
-    regex = r'''(?xi)
-        # Warning location and optional title for the message
-        ^.+\/(?P<file_name_1>.+):(?P<col_1>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_title>.+)?\r?\n
-        # (Optional) main message
-        (^(?P<message>.+))?
-        # (Optional) message footer
-        \r?\n
-        (^.+\/(?P<file_name_2>.+):(?P<col_2>(\d+:\d+,(\d+:)?\d+)):\s(?P<message_footer>.+))?$
-        \r?\n\r?\n
-    '''
-
-    multiline = True
     defaults = {
         # Allow to bypass the 50 errors cap
         'show-all-errors': True
     }
-    word_re = r'^((\'|")?[^"\']+(\'|")?)(?=[\s\,\)\]])'
     selectors = {
         'html': 'source.js.embedded.html'
     }
+
+    __flow_near_re = '`(?P<near>[^`]+)`'
 
     def cmd(self):
         """
@@ -59,61 +49,68 @@ class Flow(Linter):
         if merged_settings['show-all-errors']:
             command.append('--show-all-errors')
 
-        # Until we update the regex, will re-use the old output format
-        command.append('--old-output-format')
-        command.append('--color=never')
+        if merged_settings['use-server']:
+            command.append('--no-auto-start')
+
+        command.append('--json')  # need this for simpler error handling
 
         return command
 
-    def split_match(self, match):
+    def _error_to_tuple(self, error):
         """
-        Return the components of the match.
+        Map an array of flow error messages to a fake regex match tuple.
 
-        We override this to catch linter error messages and return better
-        error messages.
+        flow returns errors like this: {message: [{<msg>},..,]} where
+        <msg>:Object {
+            descr: str,
+            level: str,
+            path: str,
+            line: number,
+            endline: number,
+            start: number,
+            end: number
+        }
+
+        Which means we can mostly avoid dealing with regex parsing since the
+        flow devs have already done that for us. Thanks flow devs!
         """
+        fake_match = True
+        error_messages = error.get('message', [])
+        # TODO(nsfmc): `line_col_base` won't work b/c we avoid `split_match`'s codepath
+        line = error_messages[0]['line'] - 1
+        col = error_messages[0]['start'] - 1
 
-        if match:
-            open_file_name = os.path.basename(self.view.file_name())
-            # Since the filename on the top row might be different than the open file if, for example,
-            # something is imported from another file. Use the filename from the footer is it's available.
-            linted_file_name = match.group('file_name_1') or match.group('file_name_2')
+        level = error_messages[0]['level']
+        is_error = level == 'error'
+        is_warning = level == 'warning'
 
-            if linted_file_name == open_file_name:
+        combined_message = " ".join([m.get('descr', '') for m in error_messages])
 
-                # In the flow message format, the message ends up getting split into a few
-                # pieces for better readability - we try to reconstruct these.
-                message_title = match.group('message_title')
-                message = match.group('message')
-                message_footer = match.group('message_footer')
-                col = match.group('col_1') or match.group('col_2')
+        near_match = re.search(self.__flow_near_re, combined_message)
+        near = near_match.group('near') if near_match else None
+        persist.debug('flow line: {}, col: {}, level: {}, message: {}'.format(
+            line, col, level, combined_message))
 
-                if message_title and message_title.strip():
-                    message = '"{0}" {1} "{2}"'.format(
-                        message_title,
-                        message,
-                        message_footer
-                    )
+        return (fake_match, line, col, is_error, is_warning, combined_message, near)
 
-                # Get the start and ending indexes of the line and column
-                line_cols = col.replace(':', ',').split(',')
-                line_start = max(int(line_cols[0]) - 1, 0)
-                col_start = int(line_cols[1])
-                col_start -= 1
+    def find_errors(self, output):
+        """
+        Convert flow's json output into a set of matches SublimeLinter can process.
 
-                # Multi line error
-                if len(line_cols) == 4:
-                    line_end = max(int(line_cols[2]) - 1, 0)
-                    col_end = int(line_cols[3])
-                    near = " " * (self.view.text_point(line_end, col_end) - self.view.text_point(line_start, col_start))
+        I'm not sure why find_errors isn't exposed in SublimeLinter's docs, but
+        this would normally attempt to parse a regex and then return a generator
+        full of sanitized matches. Instead, this implementation returns a list
+        of errors processed by _error_to_tuple, ready for SublimeLinter to unpack
+        """
+        try:
+            # calling flow in a matching syntax without a `flowconfig` will cause the
+            # output of flow to be an error message. catch and return []
+            parsed = json.loads(output)
+        except ValueError:
+            persist.debug('flow {}'.format(output))
+            return []
 
-                # Single line error
-                else:
-                    col_end = int(line_cols[2])
-                    # Get the length of the column section for length of error
-                    near = " " * (col_end - col_start)
+        errors = parsed.get('errors', [])
 
-                # match, line, col, error, warning, message, near
-                return match, line_start, col_start, True, False, message, near
-
-        return match, None, None, None, None, '', None
+        persist.debug('flow {} errors. passed: {}'.format(len(errors), parsed.get('passed', True)))
+        return map(self._error_to_tuple, errors)
