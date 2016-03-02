@@ -49,9 +49,6 @@ class Flow(Linter):
         if merged_settings['show-all-errors']:
             command.append('--show-all-errors')
 
-        if merged_settings['use-server']:
-            command.append('--no-auto-start')
-
         command.append('--json')  # need this for simpler error handling
 
         return command
