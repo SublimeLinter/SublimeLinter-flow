@@ -40,7 +40,6 @@ For general information on how SublimeLinter works with settings, please see [Se
 |:------|:----------|
 |lib|Add a path to your interface files. [More info](http://flowtype.org/docs/third-party.html#interface-files)|
 |show-all-errors|It allows flow to output all errors instead of stopping at 50|
-|use-server|If set to true, runs `flow --no-auto-start` instead of `flow check`. The former fetch results from an existing server (If there is no existing flow server, nothing will be done. You can use `flow start` to start a server) to speed it up|
 
 ### Warning
 
