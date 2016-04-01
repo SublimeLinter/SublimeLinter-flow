@@ -71,8 +71,8 @@ class Flow(Linter):
         Which means we can mostly avoid dealing with regex parsing since the
         flow devs have already done that for us. Thanks flow devs!
         """
-        fake_match = True
         error_messages = error.get('message', [])
+        match = self.filename == error_messages[0]['path']
         # TODO(nsfmc): `line_col_base` won't work b/c we avoid `split_match`'s codepath
         line = error_messages[0]['line'] - 1
         col = error_messages[0]['start'] - 1
@@ -88,7 +88,7 @@ class Flow(Linter):
         persist.debug('flow line: {}, col: {}, level: {}, message: {}'.format(
             line, col, level, combined_message))
 
-        return (fake_match, line, col, is_error, is_warning, combined_message, near)
+        return (match, line, col, is_error, is_warning, combined_message, near)
 
     def find_errors(self, output):
         """
