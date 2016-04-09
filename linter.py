@@ -12,14 +12,14 @@
 
 import json
 import re
-from SublimeLinter.lint import Linter, persist
+from SublimeLinter.lint import NodeLinter, persist
 
 
-class Flow(Linter):
+class Flow(NodeLinter):
     """Provides an interface to flow."""
 
     syntax = ('javascript', 'html', 'javascriptnext', 'javascript (babel)', 'javascript (jsx)', 'jsx-real')
-    executable = 'flow'
+    npm_name = 'flow-bin'
     version_args = 'version --json'
     version_re = r'"semver":\s*"(?P<version>\d+\.\d+\.\d+)"'
     version_requirement = '>= 0.17.0'
@@ -43,7 +43,7 @@ class Flow(Linter):
         This starts the server if it is already not started. Once the server
         has started, checks are very fast.
         """
-        command = [self.executable_path]
+        command = ['flow']
         merged_settings = self.get_merged_settings()
 
         if merged_settings['show-all-errors']:
@@ -51,7 +51,7 @@ class Flow(Linter):
 
         command.append('--json')  # need this for simpler error handling
 
-        return command
+        return self.build_cmd(command)
 
     def _error_to_tuple(self, error):
         """
