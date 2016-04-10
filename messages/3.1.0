@@ -1,1 +1,6 @@
-Thanks to github.com/namuol the linter will now use flow from npm
+SublimeLinter-flow
+------------------
+* Now use flow from npm
+
+Thanks to:
+  github.com/namuol
