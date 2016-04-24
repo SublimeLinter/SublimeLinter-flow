@@ -77,7 +77,7 @@ class Flow(NodeLinter):
         line = error_messages[0]['line'] - 1
         col = error_messages[0]['start'] - 1
 
-        level = error_messages[0]['level']
+        level = error_messages[0].get('level', False) or error.get('level', '')
         is_error = level == 'error'
         is_warning = level == 'warning'
 
