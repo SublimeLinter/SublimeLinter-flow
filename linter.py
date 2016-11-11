@@ -153,6 +153,10 @@ class Flow(NodeLinter):
             return flow_message.get('descr', '').strip()
         if msg_type == 'Blame':
             snippet = flow_message.get('context', '')
+
+            if snippet is None:
+                return ""
+
             loc = flow_message.get('loc', {})
             if loc:
                 start = loc.get('start', {}).get('column', 1) - 1
