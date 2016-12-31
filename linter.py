@@ -126,7 +126,7 @@ class Flow(NodeLinter):
         # http://www.sublimelinter.com/en/latest/linter_attributes.html#regex
         # In order to preserve quotes, we have to wrap strings with more quotes.
         if end and line == (message_end.get('line') - 1):
-            near = '"' + error_context[col:end] +'"'
+            near = '"' + error_context[col:end] + '"'
         else:
             near = None
 
@@ -143,7 +143,7 @@ class Flow(NodeLinter):
 
     def _find_matching_msg_for_file(self, flow_error):
         """
-        Finds the first match for the current file.
+        Find the first match for the current file.
 
         Flow errors might point to other files, and have the current file only
         deep in additional information of the top level error.
@@ -244,9 +244,7 @@ class Flow(NodeLinter):
 
 
 def _traverse_extra(flow_extra):
-    """
-    Yields all messages in `flow_extra.message` and `flow_extra.childre.message`
-    """
+    """Yield all messages in `flow_extra.message` and `flow_extra.childre.message`."""
     if flow_extra is None:
         return
 
