@@ -12,13 +12,14 @@
 
 import json
 import re
-from itertools import chain
+from itertools import chain, repeat
 from SublimeLinter.lint import NodeLinter, persist
 
 
 class Flow(NodeLinter):
     """Provides an interface to flow."""
 
+    inline_settings = ('coverage',)
     syntax = ('javascript', 'html', 'javascriptnext', 'javascript (babel)', 'javascript (jsx)', 'jsx-real')
     npm_name = 'flow-bin'
     version_args = 'version --json'
@@ -44,7 +45,14 @@ class Flow(NodeLinter):
         _flow_comment_re = r'\@flow'
         if re.search(_flow_comment_re, code):
             persist.debug("found flow pragma!")
-            return super().run(cmd, code)
+            check = super().run(cmd, code)
+
+            coverage_setting = self.get_view_settings().get('coverage')
+            coverage = super().run(_build_coverage_cmd(cmd), code) \
+                if coverage_setting and coverage_setting not in ('False', 'false', '0') \
+                else '{}'
+
+            return '[%s,%s]' % (check, coverage)
         else:
             persist.debug("did not find @flow pragma")
             return ''
@@ -220,6 +228,30 @@ class Flow(NodeLinter):
                     snippet = '{} ({})'.format(error_string, error_descr)
             return snippet.strip()
 
+    def _uncovered_to_tuple(self, uncovered, uncovered_lines):
+        """
+        Map an array of flow coverage locations to a fake regex match tuple.
+
+        Since flow produces JSON output, there is no need to match error
+        messages against regular expressions.
+        """
+        match = self.filename == uncovered.get('source')
+        line = uncovered['start']['line'] - 1
+        col = uncovered['start']['column'] - 1
+        is_error = False
+        is_warning = True
+
+        # SublimeLinter only uses the length of `near` if we provide the column
+        # That's why we can get away with a string of the right length.
+        near = ' ' * (uncovered['end']['offset'] - uncovered['start']['offset'])
+
+        message = '\u3003'  # ditto mark
+        if line not in uncovered_lines:
+            message = 'Code is not covered by Flow'
+            uncovered_lines.add(line)
+
+        return (match, line, col, is_error, is_warning, message, near)
+
     def find_errors(self, output):
         """
         Convert flow's json output into a set of matches SublimeLinter can process.
@@ -232,15 +264,21 @@ class Flow(NodeLinter):
         try:
             # calling flow in a matching syntax without a `flowconfig` will cause the
             # output of flow to be an error message. catch and return []
-            parsed = json.loads(output)
+            check, coverage = json.loads(output)
         except ValueError:
             persist.debug('flow {}'.format(output))
             return []
 
-        errors = parsed.get('errors', [])
+        errors = check.get('errors', [])
 
-        persist.debug('flow {} errors. passed: {}'.format(len(errors), parsed.get('passed', True)))
-        return map(self._error_to_tuple, errors)
+        persist.debug('flow {} errors. passed: {}'.format(len(errors), check.get('passed', True)))
+
+        return chain(
+            map(self._error_to_tuple, errors),
+            map(self._uncovered_to_tuple,
+                coverage.get('expressions', {}).get('uncovered_locs', []),
+                repeat(set()))
+        )
 
 
 def _traverse_extra(flow_extra):
@@ -251,3 +289,8 @@ def _traverse_extra(flow_extra):
     for x in flow_extra:
         yield from x.get('message')
         yield from _traverse_extra(x.get('children'))
+
+
+def _build_coverage_cmd(cmd):
+    """Infer the correct `coverage` command from the `check-contents` command."""
+    return cmd[:cmd.index('check-contents')] + ['coverage', '--path', '@', '--json']
