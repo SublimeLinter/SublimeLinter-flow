@@ -12,6 +12,7 @@
 
 import json
 import re
+from itertools import chain
 from SublimeLinter.lint import NodeLinter, persist
 
 
@@ -78,16 +79,20 @@ class Flow(NodeLinter):
 
         flow returns errors like this
         type FlowError = {
+            kind: string,
+            level: string,
             message: Array<FlowMessage>,
-            operation?: FlowMessage
-        }
+            trace: ?Array<FlowMessage>,
+            operation?: FlowMessage,
+            extra?: FlowExtra,
+        };
         type FlowMessage = {
             descr: string,
             type: "Blame" | "Comment",
             context?: ?string,
             loc?: ?FlowLoc,
             indent?: number,
-        }
+        };
 
         Which means we can mostly avoid dealing with regex parsing since the
         flow devs have already done that for us. Thanks flow devs!
@@ -97,8 +102,12 @@ class Flow(NodeLinter):
         operation = error.get('operation', {})
         loc = operation.get('loc') or error_messages[0].get('loc', {})
 
-        error_context = operation.get('context') or error_messages[0].get('context', '')
-        match = self.filename == loc.get('source')
+        message = self._find_matching_msg_for_file(error)
+        if message is None:
+            return (False, 0, 0, False, False, '', None)
+
+        error_context = message.get('context', '')
+        loc = message.get('loc')
         message_start = loc.get('start', {})
         message_end = loc.get('end', {})
 
@@ -113,8 +122,11 @@ class Flow(NodeLinter):
         # slice the error message from the context and loc positions
         # If error spans multiple lines, though, don't highlight them all
         # but highlight the 1st error character by passing None as near
+        # SublimeLinter will strip quotes of `near` strings as documented in
+        # http://www.sublimelinter.com/en/latest/linter_attributes.html#regex
+        # In order to preserve quotes, we have to wrap strings with more quotes.
         if end and line == (message_end.get('line') - 1):
-            near = error_context[col:end]
+            near = '"' + error_context[col:end] + '"'
         else:
             near = None
 
@@ -127,7 +139,48 @@ class Flow(NodeLinter):
         persist.debug('flow line: {}, col: {}, level: {}, message: {}'.format(
             line, col, level, combined_message))
 
-        return (match, line, col, is_error, is_warning, combined_message, near)
+        return (True, line, col, is_error, is_warning, combined_message, near)
+
+    def _find_matching_msg_for_file(self, flow_error):
+        """
+        Find the first match for the current file.
+
+        Flow errors might point to other files, and have the current file only
+        deep in additional information of the top level error.
+
+        The error format is described in `tsrc/flowResult.js` in the flow repo:
+
+        type FlowError = {
+            kind: string,
+            level: string,
+            message: Array<FlowMessage>,
+            trace: ?Array<FlowMessage>,
+            operation?: FlowMessage,
+            extra?: FlowExtra,
+        };
+        type FlowMessage = {
+            descr: string,
+            type: "Blame" | "Comment",
+            context?: ?string,
+            loc?: ?FlowLoc,
+            indent?: number,
+        };
+        type FlowExtra = Array<{
+            message: Array<FlowMessage>,
+            children: FlowExtra,
+        }>
+        """
+
+        messages = chain(
+            (flow_error['operation'],) if 'operation' in flow_error else (),
+            flow_error['message'],
+            _traverse_extra(flow_error.get('extra')),
+        )
+
+        for message in messages:
+            source = message.get('loc', {}).get('source')
+            if source == self.filename:
+                return message
 
     def _format_message(self, flow_message):
         """
@@ -188,3 +241,13 @@ class Flow(NodeLinter):
 
         persist.debug('flow {} errors. passed: {}'.format(len(errors), parsed.get('passed', True)))
         return map(self._error_to_tuple, errors)
+
+
+def _traverse_extra(flow_extra):
+    """Yield all messages in `flow_extra.message` and `flow_extra.childre.message`."""
+    if flow_extra is None:
+        return
+
+    for x in flow_extra:
+        yield from x.get('message')
+        yield from _traverse_extra(x.get('children'))
