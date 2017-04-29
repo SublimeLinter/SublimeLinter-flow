@@ -36,7 +36,9 @@ class Flow(NodeLinter):
 
     defaults = {
         # Allow to bypass the 50 errors cap
-        'show-all-errors': True
+        'show-all-errors': True,
+        # Allow to use a specific executable
+        'flow-bin': None,
     }
     selectors = {
         'html': 'source.js.embedded.html'
@@ -86,6 +88,15 @@ class Flow(NodeLinter):
         c = self.build_cmd(command)
         persist.debug('flow attempting to run from: {}'.format(c))
         return c
+
+    def context_sensitive_executable_path(self, cmd):
+        """
+        Returns the user-configured path to flow, if any. Otherwise falls back
+        to NodeLinter for finding the executable.
+        """
+        path = self.get_merged_settings()['flow-bin']
+        return (False, path) if path is not None \
+            else super(Flow, self).context_sensitive_executable_path(cmd)
 
     def _error_to_tuple(self, error):
         """
