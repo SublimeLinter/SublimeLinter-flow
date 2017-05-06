@@ -91,8 +91,9 @@ class Flow(NodeLinter):
 
     def context_sensitive_executable_path(self, cmd):
         """
-        Returns the user-configured path to flow, if any. Otherwise falls back
-        to NodeLinter for finding the executable.
+        Return the user-configured path to flow, if any.
+
+        Otherwise falls back to NodeLinter for finding the executable.
         """
         path = self.get_merged_settings()['flow-bin']
         return (False, path) if path is not None \
