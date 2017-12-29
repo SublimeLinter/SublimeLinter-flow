@@ -3,7 +3,7 @@ SublimeLinter-flow
 
 [![Build Status](https://travis-ci.org/SublimeLinter/SublimeLinter-flow.svg?branch=master)](https://travis-ci.org/SublimeLinter/SublimeLinter-flow)
 
-This linter plugin for [SublimeLinter](http://sublimelinter.readthedocs.org) provides an interface to [flow](http://flowtype.org/) (0.1.0 or later), a static type checker for JavaScript. It will be used with files that have the “JavaScript” syntax.
+This linter plugin for [SublimeLinter](https://github.com/SublimeLinter/SublimeLinter) provides an interface to [flow](http://flowtype.org/) (0.1.0 or later), a static type checker for JavaScript. It will be used with files that have the “JavaScript” syntax.
 
 ## Installation
 SublimeLinter must be installed in order to use this plugin. 
