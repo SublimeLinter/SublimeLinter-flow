@@ -1,7 +1,0 @@
-SublimeLinter-flow
-------------------
-* Adds `all` setting back.
-* Can show flow coverage warnings if configured!
-
-Thanks to:
-  github.com/davidaurelio

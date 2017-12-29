@@ -1,10 +1,4 @@
 {
     "install": "messages/install.txt",
-    "2.0.0": "messages/2.0.0",
-    "2.1.0": "messages/2.1.0",
-    "3.0.0": "messages/3.0.0",
-    "3.1.0": "messages/3.1.0",
-    "4.0.0": "messages/4.0.0",
-    "4.1.0": "messages/4.1.0",
-    "4.2.0": "messages/4.2.0"
+    "4.3.0": "messages/4.3.0.txt"
 }

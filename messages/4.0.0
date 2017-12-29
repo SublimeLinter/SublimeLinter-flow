@@ -1,7 +1,0 @@
-SublimeLinter-flow
-------------------
-* Only lints files with @flow comment
-* No longer a file based linter
-
-Thanks to:
-  github.com/nsfmc
