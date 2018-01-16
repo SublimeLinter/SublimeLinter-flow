@@ -76,11 +76,11 @@ class Flow(NodeLinter):
         has started, checks are very fast.
         """
         command = ['flow']
-        merged_settings = self.get_merged_settings()
+        view_settings = self.get_view_settings()
 
         command.extend(['check-contents', '@'])
 
-        if merged_settings['show-all-errors']:
+        if view_settings['show-all-errors']:
             command.append('--show-all-errors')
 
         command.append('--json')  # need this for simpler error handling
@@ -95,7 +95,7 @@ class Flow(NodeLinter):
 
         Otherwise falls back to NodeLinter for finding the executable.
         """
-        path = self.get_merged_settings()['flow-bin']
+        path = self.get_view_settings()['flow-bin']
         return (False, path) if path is not None \
             else super(Flow, self).context_sensitive_executable_path(cmd)
 
