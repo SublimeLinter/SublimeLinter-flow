@@ -69,7 +69,7 @@ class Flow(NodeLinter):
 
         command.append('--json')  # need this for simpler error handling
 
-        return c
+        return command
 
     def _error_to_tuple(self, error):
         """
