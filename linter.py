@@ -20,28 +20,12 @@ from SublimeLinter.lint import NodeLinter, persist
 class Flow(NodeLinter):
     """Provides an interface to flow."""
 
-    inline_settings = ('coverage', 'all')
-    syntax = (
-        'javascript',
-        'html',
-        'javascriptnext',
-        'javascript (babel)',
-        'javascript (jsx)',
-        'jsx-real'
-    )
     npm_name = 'flow-bin'
-    version_args = 'version --json'
-    version_re = r'"semver":\s*"(?P<version>\d+\.\d+\.\d+)"'
-    version_requirement = '>= 0.17.0'
 
     defaults = {
+        'selector': 'source.js',
         # Allow to bypass the 50 errors cap
-        'show-all-errors': True,
-        # Allow to use a specific executable
-        'flow-bin': None,
-    }
-    selectors = {
-        'html': 'source.js.embedded.html'
+        'show-all-errors': True
     }
 
     __flow_near_re = '`(?P<near>[^`]+)`'
@@ -85,19 +69,7 @@ class Flow(NodeLinter):
 
         command.append('--json')  # need this for simpler error handling
 
-        c = self.build_cmd(command)
-        persist.debug('flow attempting to run from: {}'.format(c))
         return c
-
-    def context_sensitive_executable_path(self, cmd):
-        """
-        Return the user-configured path to flow, if any.
-
-        Otherwise falls back to NodeLinter for finding the executable.
-        """
-        path = self.get_view_settings()['flow-bin']
-        return (False, path) if path is not None \
-            else super(Flow, self).context_sensitive_executable_path(cmd)
 
     def _error_to_tuple(self, error):
         """
