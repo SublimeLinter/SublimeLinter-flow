@@ -1,0 +1,5 @@
+SublimeLinter-flow
+------------------
+
+Renamed setting `flow-bin` to `executable` which is the standard name now for
+all SublimeLinter 4 linters.
