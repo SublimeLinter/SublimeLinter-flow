@@ -25,7 +25,7 @@ Additional SublimeLinter-flow settings:
 |:------|:----------|
 |lib|Add a path to your interface files. [More info](http://flowtype.org/docs/third-party.html#interface-files)|
 |show-all-errors|It allows flow to output all errors instead of stopping at 50|
-|flow-bin|Allows to specify the path to the flow executable|
+|executable|Allows to specify the path to the flow executable|
 |coverage|Shows flow coverage warnings|
 |all|runs flow against all files regardless of `@flow` comment|
 
