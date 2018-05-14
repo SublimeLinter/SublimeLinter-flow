@@ -62,7 +62,7 @@ class Flow(NodeLinter):
         command = ['flow']
         view_settings = self.get_view_settings()
 
-        command.extend(['check-contents', '@'])
+        command.extend(['check-contents', '$file'])
 
         if view_settings['show-all-errors']:
             command.append('--show-all-errors')
