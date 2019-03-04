@@ -16,6 +16,7 @@ from itertools import chain, repeat
 
 from SublimeLinter.lint import NodeLinter, persist
 
+
 class Flow(NodeLinter):
     """Provides an interface to flow."""
 
@@ -232,6 +233,7 @@ class Flow(NodeLinter):
         Since flow produces JSON output, there is no need to match error
         messages against regular expressions.
         """
+        match = self.filename == uncovered.get('source')
         line = uncovered['start']['line'] - 1
         col = uncovered['start']['column'] - 1
         error = False
@@ -248,7 +250,7 @@ class Flow(NodeLinter):
             message = 'Code is not covered by Flow (any type)'
             uncovered_lines.add(line)
 
-        return ('coverage', line, col, error, warning, message, near)
+        return (match, line, col, error, warning, message, near)
 
     def _empty_to_tuple(self, empty, empty_lines):
         """
@@ -257,6 +259,7 @@ class Flow(NodeLinter):
         Since flow produces JSON output, there is no need to match error
         messages against regular expressions.
         """
+        match = self.filename == uncovered.get('source')
         line = empty['start']['line'] - 1
         col = empty['start']['column'] - 1
         error = False
@@ -273,7 +276,7 @@ class Flow(NodeLinter):
             message = 'Code is not covered by Flow (empty type)'
             empty_lines.add(line)
 
-        return ('coverage', line, col, error, warning, message, near)
+        return (match, line, col, error, warning, message, near)
 
     def find_errors(self, output):
         """
