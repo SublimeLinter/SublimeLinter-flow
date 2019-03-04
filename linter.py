@@ -259,7 +259,7 @@ class Flow(NodeLinter):
         Since flow produces JSON output, there is no need to match error
         messages against regular expressions.
         """
-        match = self.filename == uncovered.get('source')
+        match = self.filename == empty.get('source')
         line = empty['start']['line'] - 1
         col = empty['start']['column'] - 1
         error = False
