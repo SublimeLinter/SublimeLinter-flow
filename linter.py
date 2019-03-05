@@ -132,9 +132,11 @@ class Flow(NodeLinter):
         else:
             near = None
 
+        kind = error.get('kind', False)
+
         level = error.get('level', False)
-        is_error = level == 'error'
-        is_warning = level == 'warning'
+        error = kind if level == 'error' else False
+        warning = kind if level == 'warning' else False
 
         combined_message = " ".join(
             [self._format_message(msg) for msg in error_messages]
@@ -143,7 +145,7 @@ class Flow(NodeLinter):
         persist.debug('flow line: {}, col: {}, level: {}, message: {}'.format(
             line, col, level, combined_message))
 
-        return (True, line, col, is_error, is_warning, combined_message, near)
+        return (True, line, col, error, warning, combined_message, near)
 
     def _find_matching_msg_for_file(self, flow_error):
         """
@@ -234,8 +236,8 @@ class Flow(NodeLinter):
         match = self.filename == uncovered.get('source')
         line = uncovered['start']['line'] - 1
         col = uncovered['start']['column'] - 1
-        is_error = False
-        is_warning = True
+        error = False
+        warning = 'coverage'
 
         # SublimeLinter only uses the length of `near` if we provide the column
         # That's why we can get away with a string of the right length.
@@ -245,10 +247,36 @@ class Flow(NodeLinter):
 
         message = '\u3003'  # ditto mark
         if line not in uncovered_lines:
-            message = 'Code is not covered by Flow'
+            message = 'Code is not covered by Flow (any type)'
             uncovered_lines.add(line)
 
-        return (match, line, col, is_error, is_warning, message, near)
+        return (match, line, col, error, warning, message, near)
+
+    def _empty_to_tuple(self, empty, empty_lines):
+        """
+        Map an array of flow coverage locations to a fake regex match tuple.
+
+        Since flow produces JSON output, there is no need to match error
+        messages against regular expressions.
+        """
+        match = self.filename == empty.get('source')
+        line = empty['start']['line'] - 1
+        col = empty['start']['column'] - 1
+        error = False
+        warning = 'coverage'
+
+        # SublimeLinter only uses the length of `near` if we provide the column
+        # That's why we can get away with a string of the right length.
+        near = ' ' * (
+            empty['end']['offset'] - empty['start']['offset']
+        )
+
+        message = '\u3003'  # ditto mark
+        if line not in empty_lines:
+            message = 'Code is not covered by Flow (empty type)'
+            empty_lines.add(line)
+
+        return (match, line, col, error, warning, message, near)
 
     def find_errors(self, output):
         """
@@ -277,6 +305,9 @@ class Flow(NodeLinter):
             map(self._error_to_tuple, errors),
             map(self._uncovered_to_tuple,
                 coverage.get('expressions', {}).get('uncovered_locs', []),
+                repeat(set())),
+            map(self._empty_to_tuple,
+                coverage.get('expressions', {}).get('empty_locs', []),
                 repeat(set()))
         )
 
