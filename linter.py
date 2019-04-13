@@ -20,8 +20,6 @@ from SublimeLinter.lint import NodeLinter, persist
 class Flow(NodeLinter):
     """Provides an interface to flow."""
 
-    npm_name = 'flow-bin'
-
     defaults = {
         'selector': 'source.js',
         # Allow to bypass the 50 errors cap
