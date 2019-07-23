@@ -58,11 +58,11 @@ class Flow(NodeLinter):
         has started, checks are very fast.
         """
         command = ['flow']
-        view_settings = self.get_view_settings()
+        settings = self.settings
 
         command.extend(['check-contents', '$file'])
 
-        if view_settings['show-all-errors']:
+        if settings['show-all-errors']:
             command.append('--show-all-errors')
 
         command.append('--json')  # need this for simpler error handling
@@ -311,7 +311,7 @@ class Flow(NodeLinter):
 
     def _inline_setting_bool(self, s):
         """Get an inline setting as a bool."""
-        setting = self.get_view_settings().get(s)
+        setting = self.settings.get(s)
         return setting and setting not in ('False', 'false', '0')
 
 
