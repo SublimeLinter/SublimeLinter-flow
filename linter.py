@@ -178,7 +178,6 @@ class Flow(NodeLinter):
             children: FlowExtra,
         }>
         """
-
         messages = chain(
             (flow_error['operation'],) if 'operation' in flow_error else (),
             flow_error['message'],
