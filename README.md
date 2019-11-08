@@ -1,7 +1,7 @@
 SublimeLinter-flow
 ================================
 
-[![Build Status](https://travis-ci.org/SublimeLinter/SublimeLinter-flow.svg?branch=master)](https://travis-ci.org/SublimeLinter/SublimeLinter-flow)
+[![Build Status](https://github.com/SublimeLinter/SublimeLinter-flow/workflows/flake8/badge.svg)
 
 This linter plugin for [SublimeLinter](https://github.com/SublimeLinter/SublimeLinter) provides an interface to [flow](http://flowtype.org/) (0.1.0 or later), a static type checker for JavaScript.
 It will be used with files that have the "JavaScript" syntax.
