@@ -302,11 +302,6 @@ class Flow(NodeLinter):
                 repeat(set()))
         )
 
-    def _inline_setting_bool(self, s):
-        """Get an inline setting as a bool."""
-        setting = self.settings.get(s)
-        return setting and setting not in ('False', 'false', '0')
-
 
 def _traverse_extra(flow_extra):
     """Yield all messages in `flow_extra.message` and `flow_extra.childre.message`."""
