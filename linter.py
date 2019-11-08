@@ -10,11 +10,15 @@
 
 """This module exports the Flow plugin class."""
 
+import logging
 import json
 import re
 from itertools import chain, repeat
 
-from SublimeLinter.lint import NodeLinter, persist
+from SublimeLinter.lint import NodeLinter
+
+
+logger = logging.getLogger("SublimeLinter.plugin.flow")
 
 
 class Flow(NodeLinter):
@@ -38,10 +42,10 @@ class Flow(NodeLinter):
 
         if not re.search(_flow_comment_re, code) \
                 and not self._inline_setting_bool('all'):
-            persist.debug("did not find @flow pragma")
+            logger.info("did not find @flow pragma")
             return ''
 
-        persist.debug("found flow pragma!")
+        logger.info("found flow pragma!")
         check = super().run(cmd, code)
 
         coverage = super().run(_build_coverage_cmd(cmd), code) \
@@ -140,7 +144,7 @@ class Flow(NodeLinter):
             [self._format_message(msg) for msg in error_messages]
         ).strip()
 
-        persist.debug('flow line: {}, col: {}, level: {}, message: {}'.format(
+        logger.info('flow line: {}, col: {}, level: {}, message: {}'.format(
             line, col, level, combined_message))
 
         return (True, line, col, error, warning, combined_message, near)
@@ -174,7 +178,6 @@ class Flow(NodeLinter):
             children: FlowExtra,
         }>
         """
-
         messages = chain(
             (flow_error['operation'],) if 'operation' in flow_error else (),
             flow_error['message'],
@@ -290,12 +293,12 @@ class Flow(NodeLinter):
             # output of flow to be an error message. catch and return []
             check, coverage = json.loads(output)
         except ValueError:
-            persist.debug('flow {}'.format(output))
+            logger.info('flow {}'.format(output))
             return []
 
         errors = check.get('errors', [])
 
-        persist.debug('flow {} errors. passed: {}'.format(
+        logger.info('flow {} errors. passed: {}'.format(
             len(errors), check.get('passed', True)
         ))
 
