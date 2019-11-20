@@ -24,10 +24,15 @@ logger = logging.getLogger("SublimeLinter.plugin.flow")
 class Flow(NodeLinter):
     """Provides an interface to flow."""
 
+    cmd = ['flow', 'check-contents', '$file', '${args}', '--json']
     defaults = {
         'selector': 'source.js',
         # Allow to bypass the 50 errors cap
-        'show-all-errors': True
+        '--show-all-errors': True,
+        # Run against *all* files regardless of `@flow` comment
+        'all': False,
+        # Show flow coverage warnings
+        'coverage': False
     }
 
     __flow_near_re = '`(?P<near>[^`]+)`'
@@ -40,38 +45,23 @@ class Flow(NodeLinter):
         """
         _flow_comment_re = r'\@flow'
 
-        if not re.search(_flow_comment_re, code) \
-                and not self._inline_setting_bool('all'):
+        if not (
+            re.search(_flow_comment_re, code)
+            or self.settings.get['all']
+        ):
             logger.info("did not find @flow pragma")
             return ''
 
         logger.info("found flow pragma!")
         check = super().run(cmd, code)
 
-        coverage = super().run(_build_coverage_cmd(cmd), code) \
-            if self._inline_setting_bool('coverage') else '{}'
+        coverage = (
+            super().run(_build_coverage_cmd(cmd), code)
+            if self.settings['coverage']
+            else '{}'
+        )
 
         return '[%s,%s]' % (check, coverage)
-
-    def cmd(self):
-        """
-        Return the command to execute.
-
-        By default, with no command selected, the 'status' command executes.
-        This starts the server if it is already not started. Once the server
-        has started, checks are very fast.
-        """
-        command = ['flow']
-        settings = self.settings
-
-        command.extend(['check-contents', '$file'])
-
-        if settings['show-all-errors']:
-            command.append('--show-all-errors')
-
-        command.append('--json')  # need this for simpler error handling
-
-        return command
 
     def _error_to_tuple(self, error):
         """
@@ -311,11 +301,6 @@ class Flow(NodeLinter):
                 coverage.get('expressions', {}).get('empty_locs', []),
                 repeat(set()))
         )
-
-    def _inline_setting_bool(self, s):
-        """Get an inline setting as a bool."""
-        setting = self.settings.get(s)
-        return setting and setting not in ('False', 'false', '0')
 
 
 def _traverse_extra(flow_extra):
