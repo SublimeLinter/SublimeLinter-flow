@@ -47,7 +47,7 @@ class Flow(NodeLinter):
 
         if not (
             re.search(_flow_comment_re, code)
-            or self.settings.get('all')
+            or self.settings['all']
         ):
             logger.info("did not find @flow pragma")
             return ''
